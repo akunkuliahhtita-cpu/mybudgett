@@ -52,6 +52,7 @@ select pg_temp.assert_true((select relrowsecurity from pg_class where oid='stora
 select pg_temp.assert_true(pg_temp.denied(format('insert into storage.objects(bucket_id,name,metadata) values(%L,%L,%L::jsonb)','receipts',current_setting('test.pathb')||'.blocked','{"mimetype":"image/webp","size":100}')),'A cannot upload into B folder');
 select set_config('test.old_month',(date_trunc('month',now() at time zone 'Asia/Jakarta')-interval '3 months')::date::text,true);
 select pg_temp.assert_true(pg_temp.denied(format('select public.assert_report_window(%L::date,%L::date)',current_setting('test.old_month'),current_setting('test.old_month'))),'three-month window rejects older month');
+select set_config('storage.allow_delete_query','true',true);
 delete from storage.objects where bucket_id='receipts' and name=current_setting('test.pathb');
 reset role;
 select pg_temp.assert_true(exists(select 1 from storage.objects where bucket_id='receipts' and name=current_setting('test.pathb')),'A cannot delete B object');
@@ -85,6 +86,7 @@ update public.transactions set data=data||jsonb_build_object('receipt_path',curr
 select pg_temp.assert_true((select delete_after<=now() from public.receipt_files where path=current_setting('test.patha')),'replaced receipt is queued for deletion');
 select set_config('test.cleanup',current_setting('test.patha'),true);
 select pg_temp.assert_true(exists(select 1 from public.claim_receipt_cleanup() as claimed(path) where claimed.path=current_setting('test.cleanup')),'cleanup claims old receipt');
+select set_config('storage.allow_delete_query','true',true);
 delete from storage.objects where bucket_id='receipts' and name=current_setting('test.cleanup');
 select public.ack_receipt_cleanup(current_setting('test.cleanup'));
 select pg_temp.assert_true(not exists(select 1 from public.receipt_files where path=current_setting('test.cleanup')),'old receipt metadata removed after storage deletion');
