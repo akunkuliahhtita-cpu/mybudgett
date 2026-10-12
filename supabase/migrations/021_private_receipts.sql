@@ -1,7 +1,6 @@
 begin;
 
 -- Repair existing bucket records too; do not rely on first-install state.
-alter table storage.objects enable row level security;
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 values('receipts','receipts',false,2097152,array['image/jpeg','image/png','image/webp'])
 on conflict(id) do update
