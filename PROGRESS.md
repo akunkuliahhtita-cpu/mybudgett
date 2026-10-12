@@ -25,6 +25,7 @@
 - Migration 020 dan SQL rollback test belum dijalankan di Supabase live. User perlu menjalankan 020 lalu `supabase/tests/rounding_receipts_reports.sql` dan memastikan hasil `PASS`; jangan menonaktifkan trigger.
 ### Keputusan diambil
 - Daftar JSON keys wajib oleh constraint: profiles `name/pattern/purpose/opening/fixed/project/projects`; transactions `amount/type/category/description/date`; budgets `amount/category/month/mandatory`; goals `name/target/saved/monthly`. Trigger umum tetap menolak JSON null tambahan apa pun. Urutan migration project menjadi 001–019 yang sudah berjalan, lalu 020.
+- Perbaikan lanjutan: skrip uji memiliki satu kurung tutup yang kurang pada pemanggilan `assert_true(rejects_null(format(...)))`; pasangan kurung, quote, dollar-quote kini lolos pemeriksaan statis. `psql`/Postgres lokal tidak tersedia, jadi eksekusi SQL live tetap menunggu SQL Editor.
 
 ## Katalog berbayar & ulasan pesanan — 2026-10-09
 - [done] Source pricing/katalog hanya harga positif; Free tetap default subscriptions lewat trigger migration 004, tanpa menghapus akun/data. Migration 016 menonaktifkan produk nol dan menolak create_order/insert pesanan nol; admin productSchema sudah min 1.
