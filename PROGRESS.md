@@ -27,6 +27,17 @@
 - Daftar JSON keys wajib oleh constraint: profiles `name/pattern/purpose/opening/fixed/project/projects`; transactions `amount/type/category/description/date`; budgets `amount/category/month/mandatory`; goals `name/target/saved/monthly`. Trigger umum tetap menolak JSON null tambahan apa pun. Urutan migration project menjadi 001–019 yang sudah berjalan, lalu 020.
 - Perbaikan lanjutan: skrip uji memiliki satu kurung tutup yang kurang pada pemanggilan `assert_true(rejects_null(format(...)))`; pasangan kurung, quote, dollar-quote kini lolos pemeriksaan statis. `psql`/Postgres lokal tidak tersedia, jadi eksekusi SQL live tetap menunggu SQL Editor.
 
+## Hardening bucket struk private — 2026-10-12
+- [done] Migration 021 meng-upsert bucket `receipts` agar `public=false` selalu diterapkan, termasuk jika bucket sudah ada, dan memperbarui limit 2 MB/MIME yang dibolehkan.
+- [done] Policy SELECT/INSERT/DELETE struk ditegaskan ulang untuk folder milik `auth.uid()`; INSERT juga memerlukan metadata transaksi pemilik. Tidak ada UPDATE policy karena penggantian memakai object path baru. Restrictive guard lintas operasi memblokir permissive policy lain agar tidak membuka folder user lain.
+- [done] Skrip rollback menambahkan asersi private bucket, upload/delete A ke file B ditolak, dan policy permisif sementara untuk membuktikan restrictive guard tetap berlaku.
+### Sudah diuji
+- Migration dan SQL test diperiksa statis; skrip tetap dalam `BEGIN … ROLLBACK`. Eksekusi database live belum dilakukan.
+### Belum bisa diuji
+- Migration 021 dan test di SQL Editor; belum ada `psql`/Postgres lokal. Storage private harus diverifikasi dengan hasil `PASS` live sebelum dianggap terpasang.
+### Keputusan diambil
+- Urutan tambahan: setelah 018–020 yang telah dijalankan, jalankan `021_private_receipts.sql`, kemudian SQL rollback test. Jalankan hanya migration yang belum diterapkan.
+
 ## Katalog berbayar & ulasan pesanan — 2026-10-09
 - [done] Source pricing/katalog hanya harga positif; Free tetap default subscriptions lewat trigger migration 004, tanpa menghapus akun/data. Migration 016 menonaktifkan produk nol dan menolak create_order/insert pesanan nol; admin productSchema sudah min 1.
 - [done] Source migration 017: satu review per paid order, owner-only RPC, 30 detik antar submit, pending saat edit, moderasi/audit admin, projection publik tanpa UUID pengguna/pesanan, pagination 10. Legacy review dipertahankan hidden tanpa pesanan.

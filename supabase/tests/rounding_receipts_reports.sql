@@ -1,8 +1,15 @@
--- SQL Editor verification after migrations 018, 019, and 020. Uses only fresh fictional accounts; rollback is mandatory.
+-- SQL Editor verification after migrations 018-021. Uses only fresh fictional accounts; rollback is mandatory.
 begin;
 create function pg_temp.assert_true(ok boolean,label text) returns void language plpgsql as $$begin if ok is distinct from true then raise exception 'FAIL: %',label;end if;end$$;
 create function pg_temp.denied(q text) returns boolean language plpgsql as $$begin execute q;return false;exception when insufficient_privilege or invalid_parameter_value then return true;end$$;
 create function pg_temp.rejects_null(q text) returns boolean language plpgsql as $$begin execute q;return false;exception when sqlstate 'P0001' then return true;end$$;
+-- Temporary broad policies prove the restrictive owner guard cannot be bypassed; ROLLBACK removes them.
+drop policy if exists test_receipts_broad_select on storage.objects;
+create policy test_receipts_broad_select on storage.objects for select to authenticated using(bucket_id='receipts');
+drop policy if exists test_receipts_broad_insert on storage.objects;
+create policy test_receipts_broad_insert on storage.objects for insert to authenticated with check(bucket_id='receipts');
+drop policy if exists test_receipts_broad_delete on storage.objects;
+create policy test_receipts_broad_delete on storage.objects for delete to authenticated using(bucket_id='receipts');
 select set_config('test.a',gen_random_uuid()::text,true),set_config('test.b',gen_random_uuid()::text,true),set_config('test.admin',gen_random_uuid()::text,true),set_config('test.ta',gen_random_uuid()::text,true),set_config('test.tb',gen_random_uuid()::text,true),set_config('test.tnull',gen_random_uuid()::text,true),set_config('test.ra',gen_random_uuid()::text,true),set_config('test.rb',gen_random_uuid()::text,true),set_config('test.rnew',gen_random_uuid()::text,true);
 insert into auth.users(id,instance_id,aud,role,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 select id,'00000000-0000-0000-0000-000000000000'::uuid,'authenticated','authenticated',id::text||'@example.invalid',now(),'{"provider":"email","providers":["email"]}','{}',now(),now()
@@ -39,11 +46,16 @@ set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.a'),'role','authenticated')::text,true);
 select pg_temp.assert_true((select count(*)=0 from public.transactions where user_id=current_setting('test.b')::uuid),'A cannot read B transactions');
 select pg_temp.assert_true((select count(*)=0 from public.receipt_files where user_id=current_setting('test.b')::uuid),'A cannot read B receipt metadata');
+select pg_temp.assert_true((select count(*)=1 from storage.objects where bucket_id='receipts' and name=current_setting('test.patha')),'A can read own receipt object');
 select pg_temp.assert_true((select count(*)=0 from storage.objects where bucket_id='receipts' and name=current_setting('test.pathb')),'A cannot read B private receipt object');
 select pg_temp.assert_true((select not public from storage.buckets where id='receipts'),'receipt bucket is private');
+select pg_temp.assert_true((select relrowsecurity from pg_class where oid='storage.objects'::regclass),'storage object RLS is enabled');
+select pg_temp.assert_true(pg_temp.denied(format('insert into storage.objects(bucket_id,name,metadata) values(%L,%L,%L::jsonb)','receipts',current_setting('test.pathb')||'.blocked','{"mimetype":"image/webp","size":100}')),'A cannot upload into B folder');
 select set_config('test.old_month',(date_trunc('month',now() at time zone 'Asia/Jakarta')-interval '3 months')::date::text,true);
 select pg_temp.assert_true(pg_temp.denied(format('select public.assert_report_window(%L::date,%L::date)',current_setting('test.old_month'),current_setting('test.old_month'))),'three-month window rejects older month');
+delete from storage.objects where bucket_id='receipts' and name=current_setting('test.pathb');
 reset role;
+select pg_temp.assert_true(exists(select 1 from storage.objects where bucket_id='receipts' and name=current_setting('test.pathb')),'A cannot delete B object');
 
 set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.admin'),'role','authenticated')::text,true);
