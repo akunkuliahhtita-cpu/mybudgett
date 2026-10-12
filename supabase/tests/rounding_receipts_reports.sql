@@ -1,4 +1,5 @@
 -- SQL Editor verification after migrations 018-021. Uses only fresh fictional accounts; rollback is mandatory.
+-- Assumption not verified: storage.allow_delete_query is the Supabase setting that permits direct test cleanup.
 begin;
 create function pg_temp.assert_true(ok boolean,label text) returns void language plpgsql as $$begin if ok is distinct from true then raise exception 'FAIL: %',label;end if;end$$;
 create function pg_temp.denied(q text) returns boolean language plpgsql as $$begin execute q;return false;exception when insufficient_privilege or invalid_parameter_value then return true;end$$;
