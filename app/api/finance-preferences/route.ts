@@ -1,0 +1,4 @@
+import {authenticatedClient,apiError,privateJson} from '@/lib/server-api';
+import {z} from 'zod';
+export async function GET(request:Request){try{const c=await authenticatedClient(request),r=await c.rpc('get_finance_preferences');if(r.error)return privateJson({error:'Terapkan migration 018 lalu coba lagi.'},503);return privateJson(r.data);}catch(e){return apiError(e);}}
+export async function POST(request:Request){try{const c=await authenticatedClient(request),v=z.object({step:z.union([z.literal(0),z.literal(100),z.literal(500),z.literal(1000)])}).strict().safeParse(await request.json());if(!v.success)return privateJson({error:'Pembulatan tidak valid.'},400);const r=await c.rpc('set_default_rounding',{p_step:v.data.step});if(r.error)return privateJson({error:'Pengaturan gagal disimpan.'},400);return privateJson({ok:true});}catch(e){return apiError(e);}}

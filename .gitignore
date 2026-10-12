@@ -11,4 +11,6 @@ node_modules/
 .next-verify-recurring/
 .next-support-check/
 .next-review-check/
+.next-monthly-check/
+.next-final-check/
 .rls-*.log

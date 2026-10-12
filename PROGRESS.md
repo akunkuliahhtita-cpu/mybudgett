@@ -1,5 +1,20 @@
 # Progress My Budget
 
+## Laporan bulanan, ekspor, pembulatan, dan struk — 2026-10-12
+- [done] Source: laporan multi-bulan dengan ringkasan, kategori, transaksi lengkap, pilihan bulan/rentang, perbandingan nol yang aman, dan unduhan CSV/PDF server-side. Scope data dan batas 3/6 bulan diperiksa lagi oleh RPC; endpoint tidak menerima user_id.
+- [done] Pembulatan tersimpan sebagai nominal asli/hasil/selisih; trigger database menghitung ulang. Preferensi default per user. Struk dikompres di browser, dibatasi MIME/ukuran, disimpan di bucket privat dan hanya disajikan lewat signed URL singkat. Penggantian/penghapusan masuk antrean cleanup yang dicoba saat aplikasi dipakai.
+- [done] Migration 018 (preferensi, audit pembulatan, metadata & kebijakan storage) dan 019 (RPC rentang laporan), SQL rollback test, unit tests, README setup. Ditambahkan PDFKit karena belum ada library PDF di project.
+### Sudah diuji
+- Unit tests 63/63 passed; `npm run lint`, `npm run typecheck`, dan production build passed. Build pertama menemui EPERM saat membuat folder output baru; ulang di folder output yang sama berhasil. Test SQL tersedia dengan akun fixture baru, role authenticated/JWT A/B/admin dan rollback.
+### Belum bisa diuji
+- Migration 018–019 dan `supabase/tests/rounding_receipts_reports.sql` belum dijalankan di proyek Supabase live pada sesi ini; RLS Storage/cleanup live perlu hasil `PASS` dari SQL Editor. Upload QRIS/pembayaran atau deploy tidak terkait dan tidak dilakukan.
+- Tampilan 375/768/1280 tidak diinspeksi secara visual. Akses storage/unduhan end-to-end memerlukan konfigurasi Supabase dan pengguna uji.
+### Keputusan diambil
+- Rentang default 3 bulan kalender termasuk bulan ini; admin boleh memberikan 3 atau 6. Rentang diperiksa server-side; data historis tetap ada. Laporan tersedia hanya bagi entitlement `reports_access` aktif.
+- Pembulatan selalu ke atas ke kelipatan yang dipilih; tanpa pembulatan memakai nominal asli. Laporan memakai nominal bulat dan turut mencantumkan nilai asli/selisih serta penanda ada struk.
+- Cleanup bersifat lazy agar tidak memerlukan cron: objek yang sudah dilepas dari transaksi tetap terdaftar hingga Storage berhasil dihapus lalu RPC ACK. Kegagalan sementara dapat dicoba lagi saat penggunaan selanjutnya.
+- Urutan SQL: 001–017 sesuai status project → 018 → 019; jalankan hanya migration yang belum diterapkan. Berikutnya: jalankan SQL rollback test di SQL Editor sampai PASS sebelum mengklaim verifikasi live.
+
 ## Katalog berbayar & ulasan pesanan — 2026-10-09
 - [done] Source pricing/katalog hanya harga positif; Free tetap default subscriptions lewat trigger migration 004, tanpa menghapus akun/data. Migration 016 menonaktifkan produk nol dan menolak create_order/insert pesanan nol; admin productSchema sudah min 1.
 - [done] Source migration 017: satu review per paid order, owner-only RPC, 30 detik antar submit, pending saat edit, moderasi/audit admin, projection publik tanpa UUID pengguna/pesanan, pagination 10. Legacy review dipertahankan hidden tanpa pesanan.
