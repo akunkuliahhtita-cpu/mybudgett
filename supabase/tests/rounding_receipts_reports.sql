@@ -48,7 +48,6 @@ select pg_temp.assert_true((select count(*)=0 from public.transactions where use
 select pg_temp.assert_true((select count(*)=0 from public.receipt_files where user_id=current_setting('test.b')::uuid),'A cannot read B receipt metadata');
 select pg_temp.assert_true((select count(*)=1 from storage.objects where bucket_id='receipts' and name=current_setting('test.patha')),'A can read own receipt object');
 select pg_temp.assert_true((select count(*)=0 from storage.objects where bucket_id='receipts' and name=current_setting('test.pathb')),'A cannot read B private receipt object');
-select pg_temp.assert_true((select not public from storage.buckets where id='receipts'),'receipt bucket is private');
 select pg_temp.assert_true((select relrowsecurity from pg_class where oid='storage.objects'::regclass),'storage object RLS is enabled');
 select pg_temp.assert_true(pg_temp.denied(format('insert into storage.objects(bucket_id,name,metadata) values(%L,%L,%L::jsonb)','receipts',current_setting('test.pathb')||'.blocked','{"mimetype":"image/webp","size":100}')),'A cannot upload into B folder');
 select set_config('test.old_month',(date_trunc('month',now() at time zone 'Asia/Jakarta')-interval '3 months')::date::text,true);
@@ -91,5 +90,7 @@ select public.ack_receipt_cleanup(current_setting('test.cleanup'));
 select pg_temp.assert_true(not exists(select 1 from public.receipt_files where path=current_setting('test.cleanup')),'old receipt metadata removed after storage deletion');
 delete from public.transactions where id=current_setting('test.ta')::uuid;
 select pg_temp.assert_true(exists(select 1 from public.claim_receipt_cleanup() as claimed(path) where claimed.path=current_setting('test.pathnew')),'deleted transaction receipt is queued');
+reset role;
+select pg_temp.assert_true((select not public from storage.buckets where id='receipts'),'receipt bucket is private');
 select 'PASS: rounding audit, 3/6 month limit, owner RLS, private receipts and deletion cleanup; ROLLBACK removes fixtures' as result;
 rollback;
