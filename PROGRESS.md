@@ -15,6 +15,17 @@
 - Cleanup bersifat lazy agar tidak memerlukan cron: objek yang sudah dilepas dari transaksi tetap terdaftar hingga Storage berhasil dihapus lalu RPC ACK. Kegagalan sementara dapat dicoba lagi saat penggunaan selanjutnya.
 - Urutan SQL: 001–017 sesuai status project → 018 → 019; jalankan hanya migration yang belum diterapkan. Berikutnya: jalankan SQL rollback test di SQL Editor sampai PASS sebelum mengklaim verifikasi live.
 
+## Perbaikan trigger JSON null untuk transaksi/struk — 2026-10-12
+- [done] Temuan: `reject_null_finance_fields()` dari 001 dipasang pada `profiles`, `transactions`, `budgets`, `goals`; fungsi menolak nilai JSONB `null` mana pun di `data`, bukan kolom SQL tertentu. Constraint `*_required` menetapkan keys spesifik per tabel.
+- [done] Penyebab: `normalize_transaction()` migration 018 selalu menggabungkan `receipt_path` bernilai SQL NULL ke JSONB sehingga menjadi `"receipt_path": null`; trigger `transactions_no_null` kemudian menolaknya. Form aplikasi mengirim `receipt_path: null` dan `saveItem` melakukan upsert pada `transactions`, jadi alur nyata terdampak juga.
+- [done] Migration 020 menyesuaikan normalisasi agar menghapus key `receipt_path` saat kosong dan tetap menyimpan path bila ada. Skrip SQL rollback sekarang menguji pembulatan tersimpan, JSON null tetap ditolak P0001, serta isolasi transaksi/metadata/objek struk A-B.
+### Sudah diuji
+- 018–019 sudah diterapkan pengguna. Setelah patch, tes lokal 63/63, lint, typecheck, dan production build lolos. Build di direktori standar berhasil; build dengan direktori output khusus beberapa kali terkena EPERM pada pembuatan route folder.
+### Belum bisa diuji
+- Migration 020 dan SQL rollback test belum dijalankan di Supabase live. User perlu menjalankan 020 lalu `supabase/tests/rounding_receipts_reports.sql` dan memastikan hasil `PASS`; jangan menonaktifkan trigger.
+### Keputusan diambil
+- Daftar JSON keys wajib oleh constraint: profiles `name/pattern/purpose/opening/fixed/project/projects`; transactions `amount/type/category/description/date`; budgets `amount/category/month/mandatory`; goals `name/target/saved/monthly`. Trigger umum tetap menolak JSON null tambahan apa pun. Urutan migration project menjadi 001–019 yang sudah berjalan, lalu 020.
+
 ## Katalog berbayar & ulasan pesanan — 2026-10-09
 - [done] Source pricing/katalog hanya harga positif; Free tetap default subscriptions lewat trigger migration 004, tanpa menghapus akun/data. Migration 016 menonaktifkan produk nol dan menolak create_order/insert pesanan nol; admin productSchema sudah min 1.
 - [done] Source migration 017: satu review per paid order, owner-only RPC, 30 detik antar submit, pending saat edit, moderasi/audit admin, projection publik tanpa UUID pengguna/pesanan, pagination 10. Legacy review dipertahankan hidden tanpa pesanan.
