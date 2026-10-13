@@ -71,8 +71,8 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.admin'),'role','authenticated')::text,true);
 select public.admin_set_report_range(current_setting('test.a')::uuid,3);
-select pg_temp.assert_true((select report_range_months=3 from public.finance_preferences where user_id=current_setting('test.a')::uuid),'admin range restored to 3');
 reset role;
+select pg_temp.assert_true((select report_range_months=3 from public.finance_preferences where user_id=current_setting('test.a')::uuid),'admin range restored to 3');
 
 -- A replaces its receipt; old object and metadata are removed by the cleanup RPC.
 set local role authenticated;
