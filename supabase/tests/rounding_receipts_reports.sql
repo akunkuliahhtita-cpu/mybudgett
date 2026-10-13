@@ -93,8 +93,12 @@ update public.transactions set data=data||jsonb_build_object('receipt_path',curr
 select pg_temp.assert_true((select delete_after<=now() from public.receipt_files where path=current_setting('test.patha')),'replaced receipt is queued for deletion');
 select set_config('test.cleanup',current_setting('test.patha'),true);
 select pg_temp.assert_true(exists(select 1 from public.claim_receipt_cleanup() as claimed(path) where claimed.path=current_setting('test.cleanup')),'cleanup claims old receipt');
+reset role;
+-- Assumption not verified: this setting permits direct DELETE for SQL Editor cleanup.
 select set_config('storage.allow_delete_query','true',true);
 delete from storage.objects where bucket_id='receipts' and name=current_setting('test.cleanup');
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.a'),'role','authenticated')::text,true);
 select public.ack_receipt_cleanup(current_setting('test.cleanup'));
 select pg_temp.assert_true(not exists(select 1 from public.receipt_files where path=current_setting('test.cleanup')),'old receipt metadata removed after storage deletion');
 delete from public.transactions where id=current_setting('test.ta')::uuid;
