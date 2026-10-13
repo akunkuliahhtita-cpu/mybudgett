@@ -35,6 +35,12 @@ select pg_temp.assert_true(pg_temp.denied(format('insert into public.receipt_fil
 reset role;
 insert into storage.objects(bucket_id,name,metadata) values('receipts',current_setting('test.patha'),'{"mimetype":"image/webp","size":100}');
 
+-- Match the application flow: attach the first uploaded path before replacing it.
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.a'),'role','authenticated')::text,true);
+update public.transactions set data=data||jsonb_build_object('receipt_path',current_setting('test.patha')) where id=current_setting('test.ta')::uuid;
+reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.b'),'role','authenticated')::text,true);
 insert into public.transactions(id,user_id,data) values(current_setting('test.tb')::uuid,auth.uid(),jsonb_build_object('amount',2000,'type','expense','category','Makan & minum','description','Test receipt B','date',(now() at time zone 'Asia/Jakarta')::date::text));
