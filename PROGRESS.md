@@ -347,3 +347,11 @@ Mobile 375px: kelima halaman tanpa horizontal overflow. Navigasi icon-only table
 Belum teruji live: email konfirmasi/reset, RLS dua akun, migration PostgreSQL. Premium/admin/pembayaran belum diimplementasikan (Phase 2), sehingga belum dapat diuji.
 Phase 1 MVP lokal selesai. Tidak lanjut otomatis ke Phase 2.
 Langkah berikutnya: pengguna isi dua variabel publik di .env.local, jalankan migration SQL di Supabase, restart dev, cek /setup, lalu uji register/konfirmasi/reset dan isolasi dua akun. Phase 2 hanya setelah diminta.
+
+## Testimoni dengan foto (migration 023)
+- [done] Tambah kompresi browser WebP (sisi terpanjang 1280px, ukuran hasil <300 KB), validasi file asli maksimal 5 MB, preview, hapus foto, dan progres upload.
+- [done] Tambah draft ulasan localStorage, rating bintang mobile, chip kalimat cepat, penghitung karakter, thumbnail publik lazy-load dan lightbox.
+- [done] Moderasi admin khusus ulasan pending; foto pending memakai signed URL admin. Delete admin menghapus objek Storage sebelum review; RPC menolak menghapus review selama objek foto masih ada.
+- [done] Migration baru `supabase/migrations/023_review_photos.sql`; bucket privat dan policy RLS(Storage) hanya membuka foto approved secara publik. Baseline `supabase/schema_baru.sql` disinkronkan; migration sebelumnya tidak diubah.
+- [done] `npm run build` lolos (Next.js compile, lint/typecheck, dan static page generation).
+- [todo] Jalankan migration 023 pada Supabase yang sudah ada. Untuk project kosong jalankan `supabase/schema_baru.sql` saja.
