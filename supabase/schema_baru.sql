@@ -160,8 +160,8 @@ create table if not exists public.plans (
 );
 insert into public.plans values
  ('free','Free',0,null,50,8,1,5,false),
- ('plus','Plus',9900,30,null,null,null,null,true),
- ('pro','Pro',19900,30,null,null,null,null,true);
+ ('plus','Plus',9000,30,null,null,null,null,true),
+ ('pro','Pro',19000,30,null,null,null,null,true);
 create table if not exists public.subscriptions (
  user_id uuid primary key references auth.users(id) on delete cascade,
  plan text not null default 'free' references public.plans(code),
@@ -348,8 +348,8 @@ create policy own_confirmations on public.payment_confirmations for select to au
 create policy own_entitlements on public.entitlements for select to authenticated using(user_id=(select auth.uid()));
 -- Only the database owner can configure products/QRIS for now; admin UI is Session B.
 insert into public.products(code,name,type,price_rupiah,duration_days,plan,active,sort_order,description) values
- ('plus-30','Plus 30 hari','subscription',9900,30,'plus',true,1,'Kuota tanpa batas, Laporan Premium dan ekspor CSV. Recurring belum tersedia.'),
- ('pro-30','Pro 30 hari','subscription',19900,30,'pro',true,2,'Semua fitur Plus yang tersedia. Analitik lanjutan, forecast dan health belum tersedia.'),
+ ('plus-30','Plus 30 hari','subscription',9000,30,'plus',true,1,'Kuota tanpa batas, Laporan Premium dan ekspor CSV. Recurring belum tersedia.'),
+ ('pro-30','Pro 30 hari','subscription',19000,30,'pro',true,2,'Semua fitur Plus yang tersedia. Analitik lanjutan, forecast dan health belum tersedia.'),
  ('early-access','Early Access Pro 12 bulan','early_access',25000,365,'pro',false,3,'Promo terbatas; harga dan periode promo harus ditetapkan admin. Bukan lifetime.');
 
 -- One entitlement truth, compatible with protected legacy subscriptions.
@@ -1478,4 +1478,14 @@ grant execute on function public.get_public_review_photos(uuid[]) to anon,authen
 notify pgrst,'reload schema';
 commit;
 
+-- ===== supabase/migrations/024_plus_pro_pricing.sql =====
+begin;
 
+-- Harga baru berlaku untuk katalog dan paket. Snapshot order yang sudah dibuat tetap.
+update public.plans set price_rupiah=9000 where code='plus';
+update public.plans set price_rupiah=19000 where code='pro';
+update public.products set price_rupiah=9000 where code='plus-30';
+update public.products set price_rupiah=19000 where code='pro-30';
+
+notify pgrst,'reload schema';
+commit;

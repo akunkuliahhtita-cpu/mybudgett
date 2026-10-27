@@ -355,3 +355,9 @@ Langkah berikutnya: pengguna isi dua variabel publik di .env.local, jalankan mig
 - [done] Migration baru `supabase/migrations/023_review_photos.sql`; bucket privat dan policy RLS(Storage) hanya membuka foto approved secara publik. Baseline `supabase/schema_baru.sql` disinkronkan; migration sebelumnya tidak diubah.
 - [done] `npm run build` lolos (Next.js compile, lint/typecheck, dan static page generation).
 - [todo] Jalankan migration 023 pada Supabase yang sudah ada. Untuk project kosong jalankan `supabase/schema_baru.sql` saja.
+
+## Penyesuaian harga Plus/Pro
+- [done] Harga katalog rencana baru: Plus Rp9.000 dan Pro Rp19.000 pada `schema_baru.sql`.
+- [done] Migration `024_plus_pro_pricing.sql` memperbarui data plans/products pada project aktif tanpa mengubah snapshot pesanan lama.
+- [done] Default produk admin dan nominal contoh checkout demo mengikuti harga Plus Rp9.000.
+- [todo] Jalankan migration 024 pada Supabase aktif agar katalog web yang membaca database menampilkan harga baru.

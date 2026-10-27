@@ -25,6 +25,7 @@
 | `migrations/021_private_receipts.sql` | Dipakai di [`schema_baru.sql`](schema_baru.sql) | Migration 021 digabungkan sesuai dependensi; koreksi khusus instalasi kosong diterapkan bila migration asal hanya memperbaiki data/schema lama. |
 | `migrations/022_receipt_cleanup_storage_api.sql` | Dipakai di [`schema_baru.sql`](schema_baru.sql) | Migration 022 digabungkan sesuai dependensi; koreksi khusus instalasi kosong diterapkan bila migration asal hanya memperbaiki data/schema lama. |
 | `migrations/023_review_photos.sql` | Dipakai untuk update; sudah digabung di [`schema_baru.sql`](schema_baru.sql) | Menambahkan penyimpanan metadata foto ulasan, bucket privat, policy upload/publikasi/admin, dan RPC foto publik. |
+| `migrations/024_plus_pro_pricing.sql` | Dipakai untuk update; sudah digabung di [`schema_baru.sql`](schema_baru.sql) | Memperbarui harga paket dan katalog Plus menjadi Rp9.000 serta Pro menjadi Rp19.000; pesanan lama tetap memakai snapshot harga saat dibuat. |
 | `admin-bootstrap.sql` | Dipakai sebagai dasar `admin_setup.sql` | Langkah bootstrap admin lama dipindahkan dan diarahkan ke schema baseline baru. File asal tidak diubah. |
 | `tests/admin_login.sql` | Abaikan karena hanya tes | Tes rollback-only untuk akun uji baru. |
 | `tests/admin_purchases.sql` | Abaikan karena hanya tes | Skenario verifikasi/fixture; bukan bagian schema aplikasi. |
